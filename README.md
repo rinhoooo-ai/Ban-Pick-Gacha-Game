@@ -49,3 +49,12 @@ Offical Website: https://quanlinhson.github.io
 
 ## Update Log
 - [Update](CHANGELOG.md)
+
+## Attribution
+This project is a fork/derivative of [NOTZeta PvP Draft Tool](https://github.com/QuanLinhSon/NOTZeta-PvP-Draft-Tool) by [QuanLinhSon](https://github.com/QuanLinhSon), licensed under the Apache License 2.0. The original LICENSE and NOTICE (if any) are preserved in this repository.
+
+### Modifications
+- Added a **Return** button to revert to the previous ban/pick step without resetting the entire draft process.
+- Changed the background image/theme.
+- Added an **"Ended"** state after ban/pick completes — the countdown timer stops and no longer runs once the draft is finished.
+- Added 2 new Genshin Impact characters: **Odette** and **Alyosha**, including character images (sourced from Hoyoverse, same as original project).

@@ -1,6 +1,6 @@
 import { GenshinCharacter } from "../../../database/character.js";
 import { logic_BP } from "../../../database/logic_bp.js";
-import { resetTime, startCountdown } from "../../../../All/tools/time.js";
+import { resetTime, startCountdown, stopCountdown } from "../../../../All/tools/time.js";
 
 //Time setting value
 let banTimeSetting = 30;
@@ -19,10 +19,16 @@ let current_n = 0;
 let tempSelectedCharacter = null;
 let isBanPickFinished = false;
 let confirmBtn = null;
+let returnBtn = null;
 let isSettingsSaved = false;
 
-const BlueBanSlot = ['b1', 'b2', 'b3', 'b4', 'b5'];
-const RedBanSlot = ['r1', 'r2', 'r3', 'r4', 'r5'];
+// ==== Return (undo) feature ====
+// Mỗi khi 1 bước ban/pick hoàn tất, push tên nhân vật (hoặc null nếu no-ban)
+// vào đây. Return = pop ra + lùi i lại 1 bước.
+let pickStack = [];
+
+const BlueBanSlot = ['b1', 'b2', 'b3'];
+const RedBanSlot = ['r1', 'r2', 'r3'];
 const BluePickSlot = ['bp1', 'bp2', 'bp3', 'bp4', 'bp5', 'bp6', 'bp7', 'bp8'];
 const RedPickSlot = ['rp1', 'rp2', 'rp3', 'rp4', 'rp5', 'rp6', 'rp7', 'rp8'];
 
@@ -62,6 +68,78 @@ function picking_selection(name) {
         }
     }
 }
+
+// Ngược lại với picking_selection: bỏ đánh dấu "đã chọn" để nhân vật
+// có thể được chọn lại sau khi Return.
+function unselectCharacter(shortName) {
+    if (!shortName) return;
+    const charObj = GenshinCharacter.find(c => c.shortName === shortName);
+    if (charObj) charObj.selected = false;
+
+    const listImg = document.querySelector(`.character-list img[alt="${shortName.toLowerCase()}"]`);
+    if (listImg) {
+        listImg.style.filter = '';
+        listImg.style.backgroundColor = '';
+    }
+}
+
+// Xoá sạch 1 slot (ban hoặc pick) về trạng thái trống ban đầu.
+function clearSlotUI(slotId) {
+    const slot = document.getElementById(slotId);
+    if (!slot) return;
+    slot.innerHTML = '';
+    slot.classList.remove('filled', 'active', 'blue-blink', 'red-blink', 'selected');
+}
+
+function decrementCounterForType(type) {
+    if (type == "RedBan") r--;
+    else if (type == "BlueBan") l--;
+    else if (type == "BluePick") lp--;
+    else if (type == "RedPick") rp--;
+}
+
+function updateReturnButtonState() {
+    if (returnBtn) returnBtn.disabled = pickStack.length === 0;
+}
+
+// Lùi lại 1 bước trong logic_BP. Gọi nhiều lần liên tiếp = lùi nhiều bước.
+export function returnStep() {
+    if (pickStack.length === 0) return;
+    stopCountdown();
+
+    if (isBanPickFinished) {
+        // Ban/pick đã kết thúc -> hiện lại UI chọn nhân vật
+        document.querySelector('.character-filter')?.classList.remove('hide-banpick-ui');
+        document.querySelector('.character-list')?.classList.remove('hide-banpick-ui');
+        if (confirmBtn) {
+            confirmBtn.classList.remove('hide-banpick-ui');
+            confirmBtn.style.display = '';
+        }
+        isBanPickFinished = false;
+        document.body.classList.remove('banpick-ended');
+    } else {
+        // Xoá preview/active của bước đang dang dở (chưa confirm) trước khi lùi
+        clearSlotUI(current);
+    }
+
+    const shortName = pickStack.pop();
+
+    const prevStep = i - 1;
+    const prevType = logic_BP[prevStep];
+    decrementCounterForType(prevType);
+    i = prevStep;
+
+    check();
+    clearSlotUI(current);
+    unselectCharacter(shortName);
+
+    tempSelectedCharacter = null;
+    if (confirmBtn) confirmBtn.disabled = true;
+
+    begin();
+    updateReturnButtonState();
+}
+// ==== End Return feature ====
 
 function updateTeamTurn(i) {
     const team1Element = document.getElementById('team1-name');
@@ -138,10 +216,11 @@ function handleCharacterPick(character, slotId) {
 function handleBanPickEnd() {
     const timer = document.querySelector('.timer');
     if (timer) timer.textContent = 'Ended';
-    if (window.countdown) clearInterval(window.countdown);
+    stopCountdown();
     if (confirmBtn) confirmBtn.disabled = true;
     isBanPickFinished = true;
     tempSelectedCharacter = null;
+    document.body.classList.add('banpick-ended');
 
     const team1Element = document.getElementById('team1-name');
     const team2Element = document.getElementById('team2-name');
@@ -155,7 +234,7 @@ function begin() {
     if (!isSettingsSaved) return;
 
     let slot;
-    if (i >= champion_number) {
+    if (i >= champion_number || !logic_BP[i]) {
         handleBanPickEnd();
         return;
     }
@@ -169,15 +248,17 @@ function begin() {
         startCountdown(
             banTimeSetting,
             () => {
-                if (i >= champion_number) return;
+                if (i >= champion_number || !logic_BP[i]) return;
                 handleNoBan(current);
                 if (slot) slot.classList.remove('active', 'red-blink');
+                pickStack.push(null);
                 r++;
                 i++;
                 ban_sound_play();
                 check();
                 begin();
                 if (confirmBtn) confirmBtn.disabled = true;
+                updateReturnButtonState();
             }
         );
         updateTeamTurn(i);
@@ -191,15 +272,17 @@ function begin() {
         startCountdown(
             banTimeSetting,
             () => {
-                if (i >= champion_number) return;
+                if (i >= champion_number || !logic_BP[i]) return;
                 handleNoBan(current);
                 if (slot) slot.classList.remove('active', 'blue-blink');
+                pickStack.push(null);
                 l++;
                 i++;
                 ban_sound_play();
                 check();
                 begin();
                 if (confirmBtn) confirmBtn.disabled = true;
+                updateReturnButtonState();
             }
         );
         updateTeamTurn(i);
@@ -213,7 +296,7 @@ function begin() {
         startCountdown(
             pickTimeSetting,
             () => {
-                if (i >= champion_number) return;
+                if (i >= champion_number || !logic_BP[i]) return;
                 if (tempSelectedCharacter) {
                     handleCharacterPick(tempSelectedCharacter, current);
                     pick_sound_play();
@@ -225,16 +308,19 @@ function begin() {
                         pick_sound_play();
                     }
                 }
+                pickStack.push(tempSelectedCharacter ? tempSelectedCharacter.shortName : null);
                 lp++;
                 i++;
                 if (i >= champion_number) {
                     handleBanPickEnd();
+                    updateReturnButtonState();
                     return;
                 }
                 check();
                 begin();
                 if (confirmBtn) confirmBtn.disabled = true;
                 tempSelectedCharacter = null;
+                updateReturnButtonState();
             }
         );
         updateTeamTurn(i);
@@ -248,7 +334,7 @@ function begin() {
         startCountdown(
             pickTimeSetting,
             () => {
-                if (i >= champion_number) return;
+                if (i >= champion_number || !logic_BP[i]) return;
                 if (tempSelectedCharacter) {
                     handleCharacterPick(tempSelectedCharacter, current);
                     pick_sound_play();
@@ -260,16 +346,19 @@ function begin() {
                         pick_sound_play();
                     }
                 }
+                pickStack.push(tempSelectedCharacter ? tempSelectedCharacter.shortName : null);
                 rp++;
                 i++;
                 if (i >= champion_number) {
                     handleBanPickEnd();
+                    updateReturnButtonState();
                     return;
                 }
                 check();
                 begin();
                 if (confirmBtn) confirmBtn.disabled = true;
                 tempSelectedCharacter = null;
+                updateReturnButtonState();
             }
         );
         updateTeamTurn(i);
@@ -481,6 +570,8 @@ document.addEventListener('DOMContentLoaded', () => {
             characterFilter.style.pointerEvents = 'auto';
             characterList.style.pointerEvents = 'auto';
             confirmButton.style.pointerEvents = 'auto';
+            const returnButton = document.getElementById('return-btn');
+            if (returnButton) returnButton.style.pointerEvents = 'auto';
             isSettingsSaved = true;
 
             playBackgroundMusic();
@@ -534,7 +625,8 @@ function hideBanPickUI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const confirmBtn = document.getElementById('confirm');
+    const confirmButton = document.getElementById('confirm');
+    confirmBtn = confirmButton;
     confirmBtn.disabled = true;
 
     confirmBtn.addEventListener('click', () => {
@@ -545,6 +637,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (current_log === 'ban') ban_sound_play();
         else if (current_log === 'pick') pick_sound_play();
 
+        pickStack.push(tempSelectedCharacter.shortName);
+
         if (logic_BP[i] == "RedBan") r++;
         else if (logic_BP[i] == "BlueBan") l++;
         else if (logic_BP[i] == "BluePick") lp++;
@@ -553,6 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
         i++;
         if (i >= champion_number) {
             handleBanPickEnd();
+            updateReturnButtonState();
             return;
         }
 
@@ -561,5 +656,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tempSelectedCharacter = null;
         confirmBtn.disabled = true;
+        updateReturnButtonState();
     });
+});
+
+// Nút Return
+document.addEventListener('DOMContentLoaded', () => {
+    returnBtn = document.getElementById('return-btn');
+    if (returnBtn) {
+        returnBtn.disabled = true;
+        returnBtn.addEventListener('click', () => {
+            returnStep();
+        });
+    }
 });

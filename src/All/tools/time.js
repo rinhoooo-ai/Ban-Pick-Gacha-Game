@@ -26,6 +26,15 @@ export function startCountdown(duration, onTimeout) {
     }, 1000);
 }
 
+// Dừng hẳn countdown đang chạy (VD khi ban/pick đã kết thúc), không
+// cho interval cũ tiếp tục ghi đè lên chữ hiển thị.
+export function stopCountdown() {
+    if (countdown) {
+        clearInterval(countdown);
+        countdown = null;
+    }
+}
+
 export function resetTime(duration) {
     startCountdown(duration);
 }

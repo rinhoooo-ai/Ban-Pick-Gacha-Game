@@ -1600,6 +1600,26 @@ const GenshinCharacter = [
         "weapon": "sword",
         "gender": ["F"],
         "selected": false,
+    },
+    {
+        "id": 118,
+        "fullName": "Odette",
+        "shortName": "Odette",
+        "stars": 5,
+        "elements": ["cryo"],
+        "weapon": "sword",
+        "gender": ["F"],
+        "selected": false,
+    },
+    {
+        "id": 119,
+        "fullName": "Alyosha",
+        "shortName": "Alyosha",
+        "stars": 4,
+        "elements": ["electro"],
+        "weapon": "polearm",
+        "gender": ["M"],
+        "selected": false,
     }
 ];
 

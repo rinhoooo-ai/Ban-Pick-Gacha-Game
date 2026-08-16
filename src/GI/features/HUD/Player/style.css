@@ -7,7 +7,7 @@
 
 body {
     /* background-image: url('../../../asset/images/background.webp'); */
-    background-image: url('../../../asset/images/Song_of_the_Welkin_Moon.webp');
+    background-image: url('../../../asset/images/snez_bg.jpg');
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
@@ -815,4 +815,21 @@ button.confirm:disabled {
 .character-list,
 .confirm {
     pointer-events: none;
+}
+
+.banpick-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Khi ban/pick đã kết thúc, ghim nút Return xuống đáy-giữa màn hình
+   thay vì để nó trôi vào giữa (do các khối filter/list bị ẩn đi). */
+.banpick-ended #return-btn {
+    position: fixed;
+    bottom: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffe08a;
+    z-index: 50;
 }
