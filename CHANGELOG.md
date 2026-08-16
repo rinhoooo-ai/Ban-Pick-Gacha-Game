@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 🔥 Version 1.3.0 (August 16, 2026)
+### ✨ Add:
+- Add new character in GI: **Odette, Alyosha & Traveler (Cryo)**.
+- Add **Return** button in GI Ban/Pick UI: allows reverting to the previous ban/pick step without resetting the entire draft process.
+
+### 🔧 Change:
+- Change background image for GI Ban/Pick UI.
+
+### 🚀 Optimization:
+- After the ban/pick phase ends, display an **"Ended"** label and stop the countdown timer instead of continuing to count down.
+
 ## 🔥 Version 1.2.18 (July 25, 2026)
 ### ✨ Add:
 - Add new character in HSR v4.4 (Part 2) - HSRxFATE : **Rin Tohsaka & Gilgamesh**.
