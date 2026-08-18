@@ -10,6 +10,7 @@ let isPickTimeSet = false;
 //Global variables
 let globalTeam1 = "Team 1";
 let globalTeam2 = "Team 2";
+let globalBossChoice = "1";
 let champion_number = 27;
 let i = 1;
 let l = 0, r = 0, lp = 0, rp = 0;
@@ -108,7 +109,6 @@ export function returnStep() {
     stopCountdown();
 
     if (isBanPickFinished) {
-        // Ban/pick đã kết thúc -> hiện lại UI chọn nhân vật
         document.querySelector('.character-filter')?.classList.remove('hide-banpick-ui');
         document.querySelector('.character-list')?.classList.remove('hide-banpick-ui');
         if (confirmBtn) {
@@ -117,6 +117,7 @@ export function returnStep() {
         }
         isBanPickFinished = false;
         document.body.classList.remove('banpick-ended');
+        hideBossWallpaper();
     } else {
         // Xoá preview/active của bước đang dang dở (chưa confirm) trước khi lùi
         clearSlotUI(current);
@@ -228,6 +229,29 @@ function handleBanPickEnd() {
     if (team2Element) team2Element.textContent = globalTeam2;
 
     hideBanPickUI();
+    showBossWallpaper();
+}
+
+function showBossWallpaper() {
+    const player = document.querySelector('.banpick-player');
+    const actions = document.querySelector('.banpick-actions');
+    if (!player || !actions) return;
+
+    let bossImg = document.getElementById('boss-wallpaper');
+    if (!bossImg) {
+        bossImg = document.createElement('img');
+        bossImg.id = 'boss-wallpaper';
+        bossImg.style.width = '100%';
+        bossImg.style.maxHeight = '500px';
+        bossImg.style.objectFit = 'contain';
+        player.insertBefore(bossImg, actions);
+    }
+    bossImg.src = `../../../asset/images/boss/boss${globalBossChoice}.png`;
+}
+
+function hideBossWallpaper() {
+    const bossImg = document.getElementById('boss-wallpaper');
+    if (bossImg) bossImg.remove();
 }
 
 function begin() {
@@ -540,7 +564,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 globalTeam2 = settingsData.team2Name;
                 document.getElementById('team2-name').textContent = settingsData.team2Name;
             }
-
+            // Update boss wallpaper
+            if (settingsData.bossChoice) {
+                globalBossChoice = settingsData.bossChoice;
+            }
             // Update team scores
             if (settingsData.team1Score) {
                 document.getElementById('team1-score').textContent = settingsData.team1Score;

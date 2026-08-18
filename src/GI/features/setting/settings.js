@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 team2Score: document.getElementById('team2-score-input').value,
                 banTime: document.getElementById('ban-time-setting').value,
                 pickTime: document.getElementById('pick-time-setting').value,
+                bossChoice: document.getElementById('boss-select').value,
             };
 
             // Send settings data to parent document
